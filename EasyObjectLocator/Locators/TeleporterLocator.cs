@@ -1,4 +1,4 @@
-﻿using EasyObjectLocator.Abstraction;
+﻿using EasyObjectLocator.Abstraction.Components;
 using RoR2;
 using RoR2.UI;
 using UnityEngine;
@@ -6,34 +6,34 @@ using UnityEngine.AddressableAssets;
 
 namespace EasyObjectLocator.Locators
 {
-    internal class TeleporterLocator : ObjectLocatorBase
+    internal sealed class TeleporterLocator : ObjectLocatorComponent
     {
         private PositionIndicator _positionIndicator;
         private ChargeIndicatorController _chargeIndicatorController;
 
-#pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-        public TeleporterLocator(IPluginRoot pluginRoot)
-#pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-            : base(pluginRoot)
-        { }
+        public override string ComponentId => "rosehx.EasyObjectLocator.TeleporterLocator";
 
-        protected override void ExtendConfig()
+        public override void ExtendConfig()
         {
         }
 
-        protected override void ExtendHooks()
+        public override void ExtendHooks()
         {
             On.RoR2.TeleporterInteraction.OnEnable += TeleporterInteraction_OnEnable;
             On.RoR2.TeleporterInteraction.OnDestroy += TeleporterInteraction_OnDestroy;
         }
-
 
         private void TeleporterInteraction_OnEnable(On.RoR2.TeleporterInteraction.orig_OnEnable orig, TeleporterInteraction self)
         {
             orig(self);
 
             GameObject chargingIndicatorPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Teleporters/TeleporterChargingPositionIndicator.prefab").WaitForCompletion();
-            _positionIndicator = _pluginRoot.InstantiateObject(chargingIndicatorPrefab, self.teleporterPositionIndicator.transform.position, Quaternion.identity).GetComponent<PositionIndicator>();
+#pragma warning disable Publicizer001 // Accessing a member that was not originally public
+            _positionIndicator = PluginRoot.InstantiateObject(chargingIndicatorPrefab, self.teleporterPositionIndicator.transform.position, Quaternion.identity).GetComponent<PositionIndicator>();
+#pragma warning restore Publicizer001 // Accessing a member that was not originally public
+
+            usedObjects.Add(_positionIndicator);
+
             _positionIndicator.gameObject.SetActive(false);
 
             _chargeIndicatorController = _positionIndicator.GetComponent<ChargeIndicatorController>();
@@ -50,27 +50,22 @@ namespace EasyObjectLocator.Locators
 
         private void TeleporterInteraction_OnDestroy(On.RoR2.TeleporterInteraction.orig_OnDestroy orig, TeleporterInteraction self)
         {
-            _pluginRoot.CancelInvoke();
+            PluginRoot.CancelInvoke();
             DestroyObjects();
             orig(self);
         }
 
 
-        public override void HideObjects()
+        private void HideObjects()
         {
             _positionIndicator.gameObject.SetActive(false);
             _chargeIndicatorController.gameObject.SetActive(false);
         }
 
-        public override void ShowObjects()
+        private void ShowObjects()
         {
             _positionIndicator.gameObject.SetActive(true);
             _chargeIndicatorController.gameObject.SetActive(true);
-        }
-
-        public override void DestroyObjects()
-        {
-            _pluginRoot.DestroyObject(_positionIndicator);
         }
     }
 }
