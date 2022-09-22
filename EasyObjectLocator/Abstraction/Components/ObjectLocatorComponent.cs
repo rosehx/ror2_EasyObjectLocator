@@ -6,7 +6,7 @@ namespace EasyObjectLocator.Abstraction.Components
 {
     public abstract class ObjectLocatorComponent : IObjectLocator
     {
-        protected IPluginRoot PluginRoot { get; private set; }
+        protected IPlugin Core { get; private set; }
 
         public abstract string ComponentId { get; }
 
@@ -15,9 +15,9 @@ namespace EasyObjectLocator.Abstraction.Components
             usedObjects = new List<Object>();
         }
 
-        public IObjectLocator Initialize(IPluginRoot pluginRoot)
+        public IObjectLocator Initialize(IPlugin plugin)
         {
-            PluginRoot = pluginRoot;
+            Core = plugin;
 
             return this;
         }
@@ -30,7 +30,7 @@ namespace EasyObjectLocator.Abstraction.Components
         public void DestroyObjects()
         {
             foreach(Object o in usedObjects)
-                PluginRoot.DestroyObject(o);
+                Object.Destroy(o);
             usedObjects = new List<Object>();
         }
     }

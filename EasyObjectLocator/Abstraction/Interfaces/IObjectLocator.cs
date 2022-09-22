@@ -5,7 +5,7 @@
         public string ComponentId { get; }
         public abstract void ExtendConfig();
         public abstract void ExtendHooks();
-        internal IObjectLocator Initialize(IPluginRoot pluginRoot);
+        internal IObjectLocator Initialize(IPlugin pluginRoot);
         public void DestroyObjects();
     }
 }

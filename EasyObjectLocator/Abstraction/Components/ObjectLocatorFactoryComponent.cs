@@ -5,13 +5,13 @@ namespace EasyObjectLocator.Abstraction.Components
 {
     internal sealed class ObjectLocatorFactoryComponent : IObjectLocatorFactory
     {
-        private readonly IPluginRoot _pluginRoot;
+        private readonly IPlugin Core;
 
         private readonly Dictionary<string, IObjectLocator> _locatorInstances;
 
-        public ObjectLocatorFactoryComponent(IPluginRoot pluginRoot)
+        public ObjectLocatorFactoryComponent(IPlugin plugin)
         {
-            _pluginRoot = pluginRoot;
+            Core = plugin;
             _locatorInstances = new Dictionary<string, IObjectLocator>();
         }
 
@@ -27,7 +27,7 @@ namespace EasyObjectLocator.Abstraction.Components
         {
             foreach (IObjectLocator locatorInstance in _locatorInstances.Values)
             {
-                locatorInstance.Initialize(_pluginRoot);
+                locatorInstance.Initialize(Core);
 
                 locatorInstance.ExtendConfig();
             }
