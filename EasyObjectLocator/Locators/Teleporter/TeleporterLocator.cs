@@ -16,16 +16,31 @@ namespace EasyObjectLocator.Locators.Teleporter
 {
     internal sealed class TeleporterLocator : Locator
     {
-        public override string ComponentId => "rosehx.EasyObjectLocator.Locators.TeleporterLocator";
-
-        private ConfigEntry<bool> _showTeleporterAlways;
-        private ConfigEntry<int> _showTeleporterAfterXSeconds;
         private ConfigEntry<bool> _showTeleporterAfterStateChange;
-
+        private ConfigEntry<int> _showTeleporterAfterXSeconds;
+        private ConfigEntry<bool> _showTeleporterAlways;
         private GameObject _teleporterLocatorObject;
-
         public TeleporterLocator(IContext core) : base(core)
         {
+        }
+
+        public override string ComponentId => "rosehx.EasyObjectLocator.Locators.TeleporterLocator";
+        public override void DestroyObjects()
+        {
+            if (NetworkHelper.IsClient() || _teleporterLocatorObject == null)
+            {
+                Factory.Logger.LogWarning($"Locator DestroyObjects - NullOrClient: \"{GetType().Name} (client={NetworkHelper.IsClient()},positionIndicator={_teleporterLocatorObject == null})\"");
+                return;
+            }
+
+            if (NetworkHelper.IsServer())
+            {
+                Factory.Logger.LogDebug($"Locator DestroyObjects - Server: \"{GetType().Name}\"");
+                NetworkHelper.DeleteObject(_teleporterLocatorObject.gameObject);
+            }
+
+            Object.Destroy(_teleporterLocatorObject.gameObject);
+            _teleporterLocatorObject = null;
         }
 
         public override void ExtendConfig()
@@ -49,6 +64,43 @@ namespace EasyObjectLocator.Locators.Teleporter
                 false,
                 new ConfigDescription("Normally if you interact with the teleporter a charging Icon shows up and the locater is removed. If you enabled this the locater stays visible.")
             );
+        }
+
+        public override void ExtendHooks()
+        {
+            if (NetworkHelper.IsClient())
+                return;
+            On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
+        }
+
+        public override void HandleIncomingMessage(NetworkInstanceId instanceId, int instanceType, int syncType)
+        {
+            if (!NetworkHelper.IsClient())
+            {
+                Factory.Logger.LogWarning($"Locator HandleIncomingMessage - Invalid: \"{GetType().Name} (client={NetworkHelper.IsClient()},positionIndicator={_teleporterLocatorObject == null})\"");
+                return;
+            }
+
+            if (!TryParseEnum<TeleporterInstanceType>(instanceType, out TeleporterInstanceType instanceTypeResult))
+                return;
+
+            if (!TryParseEnum<TeleporterSyncType>(syncType, out TeleporterSyncType syncTypeResult))
+                return;
+
+            Factory.Logger.LogDebug($"Locator HandleIncomingMessage - Pre: \"{GetType().Name} (id={instanceId},type={instanceTypeResult},sync={syncTypeResult})\" ");
+
+            if (instanceTypeResult == TeleporterInstanceType.PositionIndicator)
+            {
+                GameObject receivedObject = Util.FindNetworkObject(instanceId);
+
+                if (receivedObject == null)
+                {
+                    Factory.Logger.LogError($"Locator HandleIncomingMessage: \"{GetType().Name} (id={instanceId},type={instanceTypeResult},sync={syncTypeResult})\" ");
+                    return;
+                }
+
+                ToggleIndicator(receivedObject, syncTypeResult == TeleporterSyncType.Enable);
+            }
         }
 
         public override void Initialize()
@@ -98,22 +150,11 @@ namespace EasyObjectLocator.Locators.Teleporter
                 Context.DelayedCall(Enable, _showTeleporterAfterXSeconds.Value);
             }
         }
-
-        public override void ExtendHooks()
+        public override void RemoveHooks()
         {
             if (NetworkHelper.IsClient())
                 return;
-            On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
-        }
-
-        private void TeleporterInteraction_OnInteractionBegin(On.RoR2.TeleporterInteraction.orig_OnInteractionBegin orig, TeleporterInteraction self, Interactor activator)
-        {
-            orig(self, activator);
-            if (!_showTeleporterAfterStateChange.Value)
-            {
-                Factory.Logger.LogDebug($"Locator Hook - Hook: \"{GetType().Name}\" (action=Disable)");
-                Disable();
-            }
+            On.RoR2.TeleporterInteraction.OnInteractionBegin -= TeleporterInteraction_OnInteractionBegin;
         }
 
         protected override void Disable()
@@ -141,17 +182,6 @@ namespace EasyObjectLocator.Locators.Teleporter
             }
         }
 
-        private void ToggleIndicator(GameObject teleporterIndicator, bool on)
-        {
-            teleporterIndicator.SetActive(on);
-
-/*            PositionIndicator positionIndicator = teleporterIndicator.GetComponent<PositionIndicator>();
-            positionIndicator.gameObject.SetActive(on);
-
-            ChargeIndicatorController chargeIndicatorController = positionIndicator.GetComponent<ChargeIndicatorController>();
-            chargeIndicatorController.gameObject.SetActive(on);*/
-        }
-
         protected override void Enable()
         {
             if (NetworkHelper.IsClient() || _teleporterLocatorObject == null)
@@ -176,60 +206,16 @@ namespace EasyObjectLocator.Locators.Teleporter
             }
         }
 
-        public override void RemoveHooks()
+        private void TeleporterInteraction_OnInteractionBegin(On.RoR2.TeleporterInteraction.orig_OnInteractionBegin orig, TeleporterInteraction self, Interactor activator)
         {
-            if (NetworkHelper.IsClient())
-                return;
-            On.RoR2.TeleporterInteraction.OnInteractionBegin -= TeleporterInteraction_OnInteractionBegin;
-        }
-
-        public override void DestroyObjects()
-        {
-            if (NetworkHelper.IsClient() || _teleporterLocatorObject == null)
+            orig(self, activator);
+            if (!_showTeleporterAfterStateChange.Value)
             {
-                Factory.Logger.LogWarning($"Locator DestroyObjects - NullOrClient: \"{GetType().Name} (client={NetworkHelper.IsClient()},positionIndicator={_teleporterLocatorObject == null})\"");
-                return;
-            }
-
-            if (NetworkHelper.IsServer())
-            {
-                Factory.Logger.LogDebug($"Locator DestroyObjects - Server: \"{GetType().Name}\"");
-                NetworkHelper.DeleteObject(_teleporterLocatorObject.gameObject);
-            }
-
-            Object.Destroy(_teleporterLocatorObject.gameObject);
-            _teleporterLocatorObject = null;
-        }
-
-        public override void HandleIncomingMessage(NetworkInstanceId instanceId, int instanceType, int syncType)
-        {
-            if (!NetworkHelper.IsClient())
-            {
-                Factory.Logger.LogWarning($"Locator HandleIncomingMessage - Invalid: \"{GetType().Name} (client={NetworkHelper.IsClient()},positionIndicator={_teleporterLocatorObject == null})\"");
-                return;
-            }
-
-            if (!TryParseEnum<TeleporterInstanceType>(instanceType, out TeleporterInstanceType instanceTypeResult))
-                return;
-
-            if (!TryParseEnum<TeleporterSyncType>(syncType, out TeleporterSyncType syncTypeResult))
-                return;
-
-            Factory.Logger.LogDebug($"Locator HandleIncomingMessage - Pre: \"{GetType().Name} (id={instanceId},type={instanceTypeResult},sync={syncTypeResult})\" ");
-
-            if (instanceTypeResult == TeleporterInstanceType.PositionIndicator)
-            {
-                GameObject receivedObject = Util.FindNetworkObject(instanceId);
-
-                if(receivedObject == null)
-                {
-                    Factory.Logger.LogError($"Locator HandleIncomingMessage: \"{GetType().Name} (id={instanceId},type={instanceTypeResult},sync={syncTypeResult})\" ");
-                    return;
-                }
-
-                ToggleIndicator(receivedObject, syncTypeResult == TeleporterSyncType.Enable);
-                
+                Factory.Logger.LogDebug($"Locator Hook - Hook: \"{GetType().Name}\" (action=Disable)");
+                Disable();
             }
         }
+        private void ToggleIndicator(GameObject teleporterIndicator, bool on)
+            => teleporterIndicator.SetActive(on);
     }
 }
