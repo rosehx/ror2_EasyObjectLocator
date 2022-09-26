@@ -4,5 +4,6 @@
     {
         Enable = 10,
         Disable = 20,
+        Destroy = 20,
     }
 }

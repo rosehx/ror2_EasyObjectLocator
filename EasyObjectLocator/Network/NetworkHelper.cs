@@ -13,11 +13,5 @@ namespace EasyObjectLocator.Networking
 
         public static bool IsSinglePlayer()
             => RoR2.RoR2Application.isInSinglePlayer;
-
-        public static void SpawnObject(GameObject gameObject)
-            => NetworkServer.Spawn(gameObject);
-
-        public static void DeleteObject(GameObject gameObject)
-            => NetworkServer.Destroy(gameObject);
     }
 }

@@ -1,7 +1,7 @@
 ﻿using EasyObjectLocator.Abstract.Interfaces;
 using EasyObjectLocator.Abstraction.Interfaces;
 using System;
-using UnityEngine.Networking;
+using UnityEngine;
 
 namespace EasyObjectLocator.Abstraction.Components
 {
@@ -26,7 +26,7 @@ namespace EasyObjectLocator.Abstraction.Components
 
         public abstract void ExtendHooks();
 
-        public abstract void HandleIncomingMessage(NetworkInstanceId instanceId, int instanceType, int syncType);
+        public abstract void HandleIncomingMessage(Guid instanceId, Vector3 position, int instanceType, int syncType);
 
         public abstract void Initialize();
 

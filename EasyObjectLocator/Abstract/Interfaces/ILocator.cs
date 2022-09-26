@@ -1,4 +1,5 @@
-﻿using UnityEngine.Networking;
+﻿using System;
+using UnityEngine;
 
 namespace EasyObjectLocator.Abstract.Interfaces
 {
@@ -16,6 +17,6 @@ namespace EasyObjectLocator.Abstract.Interfaces
 
         public abstract void RemoveHooks();
 
-        public abstract void HandleIncomingMessage(NetworkInstanceId instanceId, int instanceType, int syncType);
+        public abstract void HandleIncomingMessage(Guid instanceId, Vector3 position, int instanceType, int syncType);
     }
 }
