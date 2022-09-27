@@ -1,33 +1,44 @@
 ﻿using BepInEx;
-using BepInEx.Configuration;
-using BepInEx.Logging;
-using EasyObjectLocator.Abstraction.Components;
 using EasyObjectLocator.Abstraction.Interfaces;
-using EasyObjectLocator.Locators;
+using EasyObjectLocator.Locators.Teleporter;
+using EasyObjectLocator.Network.Messages;
+using R2API;
+using R2API.Networking;
+using R2API.Utils;
+using RoR2;
+using System;
 using System.Collections;
 using UnityEngine;
-using System;
-using Mono.Cecil;
 
 namespace EasyObjectLocator
 {
     [BepInDependency("com.bepis.r2api", BepInDependency.DependencyFlags.HardDependency)]
-
-    [BepInPlugin(PluginGUID, PluginName, PluginVersion)]
-    public class Plugin : BaseUnityPlugin, IPlugin
+    [R2APISubmoduleDependency(nameof(NetworkingAPI), nameof(PrefabAPI))]
+    [BepInPlugin(Constants.PluginGUID, Constants.PluginName, Constants.PluginVersion)]
+    public class Plugin : BaseUnityPlugin, IContext
     {
-        public const string PluginGUID = "com.rosehx.easyobjectlocator";
-        public const string PluginName = "EasyObjectLocator";
-        public const string PluginVersion = "1.0.0";
-
         public void Awake()
         {
-            Factory.Instance = new ObjectLocatorFactoryComponent(this);
 
-            Factory.Instance.AddLocatorInstance(new TeleporterLocator());
+#if DEBUG
+            On.RoR2.Networking.NetworkManagerSystemSteam.OnClientConnect += (s, u, t) => { };
+#endif
 
-            Factory.Instance.Initialize();
+            NetworkingAPI.RegisterMessageType<SyncLocatorMessage>();
+
+            Factory.LocatorCollection.SetContext(this);
+
+            Factory.LocatorCollection.Instantiate<TeleporterLocator>();
+
+            Factory.LocatorCollection.ExtendConfig();
+
+            On.RoR2.Stage.Start += Hook_Stage_Start;
+            On.RoR2.Run.AdvanceStage += Hook_Run_AdvanceStage;
+            On.RoR2.Run.BeginGameOver += Hook_Run_BeginGameOver;
         }
+
+        public Coroutine DelayedCall(Action callback, float delayInSeconds)
+            => StartCoroutine(DelayedCallInternal(callback, delayInSeconds));
 
         private IEnumerator DelayedCallInternal(Action callback, float delayInSeconds)
         {
@@ -35,15 +46,25 @@ namespace EasyObjectLocator
             callback();
         }
 
-        public Coroutine DelayedCall(Action callback, float delayInSeconds)
-            => StartCoroutine(DelayedCallInternal(callback, delayInSeconds));
+        private void Hook_Run_AdvanceStage(On.RoR2.Run.orig_AdvanceStage orig, Run self, SceneDef nextScene)
+        {
+            orig(self, nextScene);
+            Factory.LocatorCollection.RemoveHooks();
+            Factory.LocatorCollection.DestroyObjects();
+        }
 
-        public ManualLogSource GetLogger()
-            => Logger;
+        private void Hook_Run_BeginGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEndingDef gameEndingDef)
+        {
+            orig(self, gameEndingDef);
+            Factory.LocatorCollection.RemoveHooks();
+            Factory.LocatorCollection.DestroyObjects();
+        }
 
-        public ConfigFile GetConfig()
-            => Config;
-
+        private void Hook_Stage_Start(On.RoR2.Stage.orig_Start orig, Stage self)
+        {
+            orig(self);
+            Factory.LocatorCollection.InitializeObjects();
+            Factory.LocatorCollection.ExtendHooks();
+        }
     }
-
 }
