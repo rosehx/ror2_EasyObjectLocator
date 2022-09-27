@@ -1,9 +1,9 @@
-﻿using EasyObjectLocator.Abstract.Interfaces;
-using EasyObjectLocator.Abstraction.Interfaces;
+﻿using EasyObjectLocator.Abstract;
+using EasyObjectLocator.Locators;
 using System;
 using System.Collections.Generic;
 
-namespace EasyObjectLocator.Abstraction.Components
+namespace EasyObjectLocator.Collection
 {
     internal sealed class LocatorCollection : ILocatorCollection
     {

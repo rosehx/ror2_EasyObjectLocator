@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace EasyObjectLocator.Abstract.Interfaces
+namespace EasyObjectLocator.Locators
 {
     public interface ILocator
     {

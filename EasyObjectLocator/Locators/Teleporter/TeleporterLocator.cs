@@ -1,6 +1,5 @@
 ﻿using BepInEx.Configuration;
-using EasyObjectLocator.Abstraction.Components;
-using EasyObjectLocator.Abstraction.Interfaces;
+using EasyObjectLocator.Abstract;
 using EasyObjectLocator.Network.Messages;
 using EasyObjectLocator.Networking;
 using R2API.Networking;
@@ -31,10 +30,7 @@ namespace EasyObjectLocator.Locators.Teleporter
         public override void DestroyObjects()
         {
             if (NetworkHelper.IsClient() || _teleporterLocatorObject == null)
-            {
-                Factory.Logger.LogWarning($"Locator DestroyObjects - NullOrClient: \"{GetType().Name} (client={NetworkHelper.IsClient()},positionIndicator={_teleporterLocatorObject == null})\"");
                 return;
-            }
 
             if (NetworkHelper.IsServer())
             {
@@ -223,7 +219,7 @@ namespace EasyObjectLocator.Locators.Teleporter
             TeleporterInteraction teleporterInteraction = UnityEngine.Object.FindObjectsOfType<TeleporterInteraction>().FirstOrDefault();
             if (teleporterInteraction == null)
             {
-                Factory.Logger.LogError($"Locator Initialize - Interaction: \"{GetType().Name}\"");
+                Factory.Logger.LogDebug($"Locator Initialize - Interaction: \"{GetType().Name}\"");
                 return;
             }
 
@@ -236,6 +232,7 @@ namespace EasyObjectLocator.Locators.Teleporter
             _teleporterLocatorObject = null;
             _teleporterLocatorId = Guid.Empty;
         }
+
         private void TeleporterInteraction_OnInteractionBegin(On.RoR2.TeleporterInteraction.orig_OnInteractionBegin orig, TeleporterInteraction self, Interactor activator)
         {
             orig(self, activator);

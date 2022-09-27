@@ -1,15 +1,18 @@
-﻿using EasyObjectLocator.Abstract.Interfaces;
-using EasyObjectLocator.Abstraction.Interfaces;
+﻿using EasyObjectLocator.Abstract;
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
-namespace EasyObjectLocator.Abstraction.Components
+namespace EasyObjectLocator.Locators
 {
     public abstract class Locator : ILocator
     {
+        protected Dictionary<Guid, GameObject> LocatorObjects;
+
         public Locator(IContext context)
         {
             Context = context;
+            LocatorObjects = new Dictionary<Guid, GameObject>();
         }
 
         public abstract string ComponentId { get; }

@@ -1,5 +1,5 @@
 ﻿using BepInEx;
-using EasyObjectLocator.Abstraction.Interfaces;
+using EasyObjectLocator.Abstract;
 using EasyObjectLocator.Locators.Teleporter;
 using EasyObjectLocator.Network.Messages;
 using R2API;

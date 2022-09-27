@@ -1,8 +1,7 @@
 ﻿using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
-using EasyObjectLocator.Abstract.Interfaces;
-using EasyObjectLocator.Abstraction.Components;
+using EasyObjectLocator.Collection;
 
 namespace EasyObjectLocator
 {

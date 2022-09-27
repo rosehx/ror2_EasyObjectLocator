@@ -1,5 +1,5 @@
 ﻿using BepInEx.Logging;
-using EasyObjectLocator.Abstract.Interfaces;
+using EasyObjectLocator.Locators;
 using EasyObjectLocator.Networking;
 using R2API.Networking.Interfaces;
 using RoR2.Networking;

@@ -1,6 +1,7 @@
-﻿using EasyObjectLocator.Abstraction.Interfaces;
+﻿using EasyObjectLocator.Abstract;
+using EasyObjectLocator.Locators;
 
-namespace EasyObjectLocator.Abstract.Interfaces
+namespace EasyObjectLocator.Collection
 {
     public interface ILocatorCollection
     {
