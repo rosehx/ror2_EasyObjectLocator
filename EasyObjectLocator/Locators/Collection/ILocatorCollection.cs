@@ -9,7 +9,7 @@ namespace EasyObjectLocator.Collection
 
         internal abstract void ExtendConfig();
 
-        internal abstract void InitializeObjects();
+        internal abstract void Initialize();
 
         internal abstract void ExtendHooks();
 

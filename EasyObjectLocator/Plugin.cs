@@ -24,7 +24,7 @@ namespace EasyObjectLocator
             On.RoR2.Networking.NetworkManagerSystemSteam.OnClientConnect += (s, u, t) => { };
 #endif
 
-            NetworkingAPI.RegisterMessageType<SyncLocatorMessage>();
+            NetworkingAPI.RegisterMessageType<LocatorSyncMessage>();
 
             Factory.LocatorCollection.SetContext(this);
 
@@ -63,7 +63,7 @@ namespace EasyObjectLocator
         private void Hook_Stage_Start(On.RoR2.Stage.orig_Start orig, Stage self)
         {
             orig(self);
-            Factory.LocatorCollection.InitializeObjects();
+            Factory.LocatorCollection.Initialize();
             Factory.LocatorCollection.ExtendHooks();
         }
     }

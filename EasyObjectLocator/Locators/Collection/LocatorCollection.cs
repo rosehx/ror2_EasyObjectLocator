@@ -58,7 +58,7 @@ namespace EasyObjectLocator.Collection
             }
         }
 
-        public void InitializeObjects()
+        public void Initialize()
         {
             Factory.Logger.LogDebug($"LocationCollection InitializeObjects - Pre");
             if (Context == null) throw new AccessViolationException("Context not set");
