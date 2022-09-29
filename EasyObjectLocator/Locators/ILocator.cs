@@ -1,7 +1,8 @@
-﻿using System;
+﻿using EasyObjectLocator.Network.Messages;
+using System;
 using UnityEngine;
 
-namespace EasyObjectLocator.Abstract.Interfaces
+namespace EasyObjectLocator.Locators
 {
     public interface ILocator
     {
@@ -11,12 +12,12 @@ namespace EasyObjectLocator.Abstract.Interfaces
 
         public abstract void ExtendHooks();
 
-        public abstract void DestroyObjects();
+        public void DestroyObjects();
 
         public abstract void Initialize();
 
         public abstract void RemoveHooks();
 
-        public abstract void HandleIncomingMessage(Guid instanceId, Vector3 position, int instanceType, int syncType);
+        public void Synchronize(Guid instanceId, Vector3 position, LocatorSyncType syncType);
     }
 }

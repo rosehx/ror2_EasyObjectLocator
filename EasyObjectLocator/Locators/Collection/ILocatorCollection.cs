@@ -1,6 +1,7 @@
-﻿using EasyObjectLocator.Abstraction.Interfaces;
+﻿using EasyObjectLocator.Abstract;
+using EasyObjectLocator.Locators;
 
-namespace EasyObjectLocator.Abstract.Interfaces
+namespace EasyObjectLocator.Collection
 {
     public interface ILocatorCollection
     {
@@ -8,7 +9,7 @@ namespace EasyObjectLocator.Abstract.Interfaces
 
         internal abstract void ExtendConfig();
 
-        internal abstract void InitializeObjects();
+        internal abstract void Initialize();
 
         internal abstract void ExtendHooks();
 
