@@ -1,5 +1,6 @@
 ﻿using BepInEx;
 using EasyObjectLocator.Abstract;
+using EasyObjectLocator.Locators.Containers;
 using EasyObjectLocator.Locators.Teleporter;
 using EasyObjectLocator.Network.Messages;
 using R2API;
@@ -19,7 +20,6 @@ namespace EasyObjectLocator
     {
         public void Awake()
         {
-
 #if DEBUG
             On.RoR2.Networking.NetworkManagerSystemSteam.OnClientConnect += (s, u, t) => { };
 #endif
@@ -29,12 +29,20 @@ namespace EasyObjectLocator
             Factory.LocatorCollection.SetContext(this);
 
             Factory.LocatorCollection.Instantiate<TeleporterLocator>();
+            Factory.LocatorCollection.Instantiate<ChestLocator>();
 
             Factory.LocatorCollection.ExtendConfig();
-
             On.RoR2.Stage.Start += Hook_Stage_Start;
             On.RoR2.Run.AdvanceStage += Hook_Run_AdvanceStage;
             On.RoR2.Run.BeginGameOver += Hook_Run_BeginGameOver;
+            On.RoR2.Run.OnApplicationQuit += Hook_Run_OnApplicationQuit;
+        }
+
+        private void Hook_Run_OnApplicationQuit(On.RoR2.Run.orig_OnApplicationQuit orig, Run self)
+        {
+            Factory.LocatorCollection.RemoveHooks();
+            Factory.LocatorCollection.DestroyObjects();
+            orig(self);
         }
 
         public Coroutine DelayedCall(Action callback, float delayInSeconds)
@@ -48,21 +56,28 @@ namespace EasyObjectLocator
 
         private void Hook_Run_AdvanceStage(On.RoR2.Run.orig_AdvanceStage orig, Run self, SceneDef nextScene)
         {
-            orig(self, nextScene);
             Factory.LocatorCollection.RemoveHooks();
             Factory.LocatorCollection.DestroyObjects();
+            orig(self, nextScene);
         }
 
         private void Hook_Run_BeginGameOver(On.RoR2.Run.orig_BeginGameOver orig, Run self, GameEndingDef gameEndingDef)
         {
-            orig(self, gameEndingDef);
             Factory.LocatorCollection.RemoveHooks();
             Factory.LocatorCollection.DestroyObjects();
+            orig(self, gameEndingDef);
         }
 
         private void Hook_Stage_Start(On.RoR2.Stage.orig_Start orig, Stage self)
         {
             orig(self);
+
+            /*            List<Type> types = (from t in typeof(ChestRevealer).Assembly.GetTypes()
+                                                      where typeof(IInteractable).IsAssignableFrom(t)
+                                                      select t).ToList<Type>();
+
+                        Factory.Logger.LogError($"#######=== {string.Join(", ", types.Select(x => x.FullName)  )} ==########");*/
+
             Factory.LocatorCollection.Initialize();
             Factory.LocatorCollection.ExtendHooks();
         }

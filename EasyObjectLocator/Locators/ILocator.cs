@@ -1,6 +1,5 @@
 ﻿using EasyObjectLocator.Network.Messages;
-using System;
-using UnityEngine;
+using UnityEngine.Networking;
 
 namespace EasyObjectLocator.Locators
 {
@@ -14,10 +13,10 @@ namespace EasyObjectLocator.Locators
 
         public void DestroyObjects();
 
-        public abstract void Initialize();
+        public void Initialize();
 
         public abstract void RemoveHooks();
 
-        public void Synchronize(Guid instanceId, Vector3 position, LocatorSyncType syncType);
+        public void Synchronize(NetworkInstanceId instanceId, LocatorSyncType syncType);
     }
 }

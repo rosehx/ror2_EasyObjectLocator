@@ -3,10 +3,10 @@ using EasyObjectLocator.Abstract;
 using EasyObjectLocator.Networking;
 using RoR2;
 using RoR2.UI;
-using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
+using UnityEngine.Networking;
 
 namespace EasyObjectLocator.Locators.Teleporter
 {
@@ -52,7 +52,7 @@ namespace EasyObjectLocator.Locators.Teleporter
             On.RoR2.TeleporterInteraction.OnInteractionBegin += TeleporterInteraction_OnInteractionBegin;
         }
 
-        public override void Initialize()
+        protected override void InternalInitialize()
         {
             if (NetworkHelper.IsClient())
                 return;
@@ -61,17 +61,14 @@ namespace EasyObjectLocator.Locators.Teleporter
             if (_showTeleporterAlways.Value)
             {
                 Factory.Logger.LogDebug($"Locator Initialize - ShowAlways: \"{GetType().Name}\"");
-                Enable();
+                EnableAll();
             }
             else if (!_showTeleporterAlways.Value && _showTeleporterAfterXSeconds.Value > 0)
             {
                 Factory.Logger.LogDebug($"Locator Initialize - ShowDelays: \"{GetType().Name}\" (delay={_showTeleporterAfterXSeconds.Value})");
-                Context.DelayedCall(Enable, _showTeleporterAfterXSeconds.Value);
+                Context.DelayedCall(EnableAll, _showTeleporterAfterXSeconds.Value);
             }
         }
-
-        private void Enable()
-            => Enable(LocatorObjects.Keys.FirstOrDefault());
 
         public override void RemoveHooks()
         {
@@ -80,10 +77,12 @@ namespace EasyObjectLocator.Locators.Teleporter
             On.RoR2.TeleporterInteraction.OnInteractionBegin -= TeleporterInteraction_OnInteractionBegin;
         }
 
-        protected override GameObject CreateObject(Vector3 position)
+        protected override GameObject CreateObject(NetworkInstanceId networkInstanceId)
         {
+            GameObject go = Util.FindNetworkObject(networkInstanceId);
+
             GameObject chargingIndicatorPrefab = Addressables.LoadAssetAsync<GameObject>("RoR2/Base/Teleporters/TeleporterChargingPositionIndicator.prefab").WaitForCompletion();
-            GameObject teleporterLocatorObject = UnityEngine.Object.Instantiate(chargingIndicatorPrefab, position, Quaternion.identity);
+            GameObject teleporterLocatorObject = UnityEngine.Object.Instantiate(chargingIndicatorPrefab, go.transform.position, Quaternion.identity);
             teleporterLocatorObject.SetActive(false);
 
             PositionIndicator positionIndicator = teleporterLocatorObject.GetComponent<PositionIndicator>();
@@ -112,17 +111,14 @@ namespace EasyObjectLocator.Locators.Teleporter
                 return;
             }
 
-            CreateObject(Guid.NewGuid(), teleporterInteraction.gameObject.transform.position);
+            PreCreateObject(teleporterInteraction.GetComponent<NetworkIdentity>().netId);
         }
 
         private void TeleporterInteraction_OnInteractionBegin(On.RoR2.TeleporterInteraction.orig_OnInteractionBegin orig, TeleporterInteraction self, Interactor activator)
         {
             orig(self, activator);
             if (!_showTeleporterAfterStateChange.Value)
-            {
-                Factory.Logger.LogDebug($"Locator Hook - Hook: \"{GetType().Name}\" (action=Disable)");
                 Disable(LocatorObjects.Keys.FirstOrDefault());
-            }
         }
     }
 }
