@@ -77,7 +77,7 @@ namespace EasyObjectLocator.Locators.Teleporter
             On.RoR2.TeleporterInteraction.OnInteractionBegin -= TeleporterInteraction_OnInteractionBegin;
         }
 
-        protected override GameObject CreateObject(NetworkInstanceId networkInstanceId)
+        protected override GameObject CreateObjectInternal(NetworkInstanceId networkInstanceId)
         {
             GameObject go = Util.FindNetworkObject(networkInstanceId);
 
@@ -111,14 +111,14 @@ namespace EasyObjectLocator.Locators.Teleporter
                 return;
             }
 
-            PreCreateObject(teleporterInteraction.GetComponent<NetworkIdentity>().netId);
+            CreateObject(teleporterInteraction.GetComponent<NetworkIdentity>().netId);
         }
 
         private void TeleporterInteraction_OnInteractionBegin(On.RoR2.TeleporterInteraction.orig_OnInteractionBegin orig, TeleporterInteraction self, Interactor activator)
         {
             orig(self, activator);
             if (!_showTeleporterAfterStateChange.Value)
-                Disable(LocatorObjects.Keys.FirstOrDefault());
+                DisableObject(LocatorObjects.Keys.FirstOrDefault());
         }
     }
 }

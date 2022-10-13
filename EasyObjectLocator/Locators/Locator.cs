@@ -22,6 +22,8 @@ namespace EasyObjectLocator.Locators
 
         protected Dictionary<NetworkInstanceId, GameObject> LocatorObjects;
 
+        protected virtual bool SyncManually => true;
+
         public Locator(IContext context)
         {
             Context = context;
@@ -63,15 +65,15 @@ namespace EasyObjectLocator.Locators
             switch (syncType)
             {
                 case LocatorSyncType.Enable:
-                    Enable(instanceId);
+                    EnableObject(instanceId);
                     break;
 
                 case LocatorSyncType.Disable:
-                    Disable(instanceId);
+                    DisableObject(instanceId);
                     break;
 
                 case LocatorSyncType.Create:
-                    PreCreateObject(instanceId);
+                    CreateObject(instanceId);
                     break;
 
                 case LocatorSyncType.Destroy:
@@ -84,7 +86,7 @@ namespace EasyObjectLocator.Locators
             }
         }
 
-        protected void PreCreateObject(NetworkInstanceId instanceId)
+        protected void CreateObject(NetworkInstanceId instanceId)
         {
             Factory.Logger.LogDebug($"Locator - PreCreateObject: \"{GetType()} (isServer={NetworkHelper.IsServer()},instanceId={instanceId})\"");
             if (LocatorObjects.ContainsKey(instanceId))
@@ -93,10 +95,10 @@ namespace EasyObjectLocator.Locators
                 return;
             }
 
-            GameObject gameObject = CreateObject(instanceId);
+            GameObject gameObject = CreateObjectInternal(instanceId);
             LocatorObjects.Add(instanceId, gameObject);
 
-            if (NetworkHelper.IsServer())
+            if (NetworkHelper.IsServer() && SyncManually)
                 LocatorSyncMessage.WithData(
                     ComponentId,
                     instanceId,
@@ -104,7 +106,7 @@ namespace EasyObjectLocator.Locators
                 ).Send(NetworkDestination.Clients);
         }
 
-        protected abstract GameObject CreateObject(NetworkInstanceId instanceId);
+        protected abstract GameObject CreateObjectInternal(NetworkInstanceId instanceId);
 
         protected void DestroyObject(NetworkInstanceId instanceId)
         {
@@ -118,7 +120,7 @@ namespace EasyObjectLocator.Locators
             UnityEngine.Object.Destroy(gameObject);
             LocatorObjects.Remove(instanceId);
 
-            if (NetworkHelper.IsServer())
+            if (NetworkHelper.IsServer() && SyncManually)
                 LocatorSyncMessage.WithData(
                     ComponentId,
                     instanceId,
@@ -126,18 +128,18 @@ namespace EasyObjectLocator.Locators
                 ).Send(NetworkDestination.Clients);
         }
 
-        protected void Disable(NetworkInstanceId instanceId)
+        protected void DisableObject(NetworkInstanceId instanceId)
         {
-            Factory.Logger.LogDebug($"Locator - Disable: \"{GetType()} (instanceId={instanceId})\"");
+            Factory.Logger.LogDebug($"Locator - DisableObject: \"{GetType()} (instanceId={instanceId})\"");
             if (!LocatorObjects.TryGetValue(instanceId, out GameObject gameObject))
             {
-                Factory.Logger.LogDebug($"Locator - Disable: \"{GetType()}(instanceId={instanceId})\"");
+                Factory.Logger.LogDebug($"Locator - DisableObject: \"{GetType()}(instanceId={instanceId})\"");
                 return;
             }
 
-            gameObject.SetActive(false);
+            DisableObjectInternal(gameObject);
 
-            if (NetworkHelper.IsServer())
+            if (NetworkHelper.IsServer() && SyncManually)
                 LocatorSyncMessage.WithData(
                     ComponentId,
                     instanceId,
@@ -149,10 +151,16 @@ namespace EasyObjectLocator.Locators
         {
             Factory.Logger.LogDebug($"Locator - EnableAll: \"{GetType()}\"");
             foreach (NetworkInstanceId instanceId in LocatorObjects.Keys)
-                Enable(instanceId);
+                EnableObject(instanceId);
         }
 
-        protected void Enable(NetworkInstanceId instanceId)
+        protected virtual void EnableObjectInternal(GameObject gameObject)
+            => gameObject.SetActive(true);
+
+        protected virtual void DisableObjectInternal(GameObject gameObject)
+            => gameObject.SetActive(false);
+
+        protected void EnableObject(NetworkInstanceId instanceId)
         {
             Factory.Logger.LogDebug($"Locator - Enable: \"{GetType()} (instanceId={instanceId})\"");
             if (!LocatorObjects.TryGetValue(instanceId, out GameObject gameObject))
@@ -162,9 +170,9 @@ namespace EasyObjectLocator.Locators
                 return;
             }
 
-            gameObject.SetActive(true);
+            EnableObjectInternal(gameObject);
 
-            if (NetworkHelper.IsServer())
+            if (NetworkHelper.IsServer() && SyncManually)
                 LocatorSyncMessage.WithData(
                     ComponentId,
                     instanceId,
