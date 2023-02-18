@@ -117,7 +117,7 @@ namespace EasyObjectLocator.Locators
                 return;
             }
 
-            UnityEngine.Object.Destroy(gameObject);
+            Object.Destroy(gameObject);
             LocatorObjects.Remove(instanceId);
 
             if (NetworkHelper.IsServer() && SyncManually)
@@ -166,7 +166,6 @@ namespace EasyObjectLocator.Locators
             if (!LocatorObjects.TryGetValue(instanceId, out GameObject gameObject))
             {
                 Factory.Logger.LogError($"Locator - Enable: \"{GetType()}(instanceId={instanceId})\"");
-                Factory.Logger.LogWarning($"===test==== {string.Join(", ", LocatorObjects.Keys.Select(x => x.Value))}");
                 return;
             }
 

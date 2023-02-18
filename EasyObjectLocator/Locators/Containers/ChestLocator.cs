@@ -3,6 +3,7 @@ using EasyObjectLocator.Abstract;
 using EasyObjectLocator.Networking;
 using R2API.Utils;
 using RoR2;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -14,7 +15,7 @@ namespace EasyObjectLocator.Locators.Containers
         private ConfigEntry<int> _showChestsAfterXSeconds;
         private ConfigEntry<bool> _showChestsAlways;
 
-        protected override bool SyncManually => false;
+        protected override bool SyncManually => true;
 
         public ChestLocator(IContext core) : base(core)
         {
@@ -51,10 +52,31 @@ namespace EasyObjectLocator.Locators.Containers
                 return;
             On.RoR2.TeleporterInteraction.OnInteractionBegin += Hook_Teleporter_Start_Charging;
             TeleporterInteraction.onTeleporterChargedGlobal += Hook_Teleporter_Finished_Charging;
+            On.RoR2.PurchaseInteraction.OnInteractionBegin += Hook_PurchaseInteraction_Begin;
 
             // TODO: Add hook for teleporter finished charging
 
             // TODO: Add hook for on chest open destroy
+        }
+
+        private void Hook_PurchaseInteraction_Begin(On.RoR2.PurchaseInteraction.orig_OnInteractionBegin orig, PurchaseInteraction self, Interactor activator)
+        {
+            orig(self, activator);
+            if (!NetworkHelper.IsClient())
+            {
+                GameObject go = self.gameObject;
+                ChestBehavior cb = go.GetComponent<ChestBehavior>();
+                if(cb != null)
+                {
+                    ChestRevealer.RevealedObject ro = cb.GetComponent<ChestRevealer.RevealedObject>();
+
+                    if(ro != null)
+                        Object.Destroy(ro);
+
+                    Context.DelayedCall(() => DestroyObject(cb.netId), 5f);
+                }
+            }
+
         }
 
         private void Hook_Teleporter_Finished_Charging(TeleporterInteraction obj)
@@ -91,11 +113,7 @@ namespace EasyObjectLocator.Locators.Containers
         private void CreateAllChestsLocally()
         {
             foreach (ChestBehavior cb in Object.FindObjectsOfType<ChestBehavior>())
-            {
-                NetworkIdentity netId = cb.gameObject.GetComponent<NetworkIdentity>();
-                if (netId != null)
-                    CreateObject(netId.netId);
-            }
+                CreateObject(cb.netId);
         }
 
         public override void RemoveHooks()
@@ -104,31 +122,20 @@ namespace EasyObjectLocator.Locators.Containers
                 return;
             On.RoR2.TeleporterInteraction.OnInteractionBegin -= Hook_Teleporter_Start_Charging;
             TeleporterInteraction.onTeleporterChargedGlobal -= Hook_Teleporter_Finished_Charging;
+            On.RoR2.PurchaseInteraction.OnInteractionBegin -= Hook_PurchaseInteraction_Begin;
         }
 
         protected override void EnableObjectInternal(GameObject gameObject)
         {
-/*            ChestRevealer.RevealedObject ro = gameObject.gameObject.AddComponent<ChestRevealer.RevealedObject>();
+            ChestRevealer.RevealedObject ro = gameObject.AddComponent<ChestRevealer.RevealedObject>();
 
             ro.SetFieldValue("lifetime", float.MaxValue);
 
-            ro.gameObject.SetActive(true);*/
-/*            ChestRevealer.RevealedObject ro = gameObject.gameObject.GetComponent<ChestRevealer.RevealedObject>();
-            ro.enabled = true;*/
+            ro.gameObject.SetActive(true);
+            ro.enabled = true;
         }
 
         protected override GameObject CreateObjectInternal(NetworkInstanceId networkInstanceId)
-        {
-            GameObject go = Util.FindNetworkObject(networkInstanceId);
-
-            ChestRevealer.RevealedObject ro = go.gameObject.AddComponent<ChestRevealer.RevealedObject>();
-
-            ro.SetFieldValue("lifetime", float.MaxValue);
-
-            ro.enabled = true;
-            ro.gameObject.SetActive(true);
-
-            return go;
-        }
+            => NetworkHelper.FindNetworkedObject(networkInstanceId);
     }
 }

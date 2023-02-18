@@ -13,5 +13,8 @@ namespace EasyObjectLocator.Networking
 
         public static bool IsSinglePlayer()
             => RoR2.RoR2Application.isInSinglePlayer;
+
+        public static GameObject FindNetworkedObject(NetworkInstanceId netId)
+            => IsClient() ? ClientScene.FindLocalObject(netId) : NetworkServer.FindLocalObject(netId);
     }
 }
